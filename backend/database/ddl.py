@@ -5,12 +5,15 @@ def create_db_if_not_exists( connection, database):
     try:
         if connection.is_connected():
             cursor = connection.cursor()
+            create_db_query = f"DROP DATABASE {database};"
+            cursor.execute(create_db_query)
             create_db_query = f"CREATE DATABASE IF NOT EXISTS {database};"
             cursor.execute(create_db_query)
             cursor.close()
             connection.database = database
             create_tables_if_not_exist( connection )
             insert_products(connection)
+            init_storage(connection)
             print("Database Initialized.")
 
     except Exception as e:
@@ -18,47 +21,40 @@ def create_db_if_not_exists( connection, database):
 
 def create_tables_if_not_exist(connection):
     create_queries = """
+        -- CREATE TABLE Customer
         CREATE TABLE IF NOT EXISTS Customer(
            Customer_ID VARCHAR(5),
-           Name VARCHAR(20) NOT NULL,
-           Email TEXT NOT NULL,
+           Name VARCHAR(20),
+           Email TEXT,
            Password_client TEXT,
            PRIMARY KEY(Customer_ID)
-        );
-
-        CREATE TABLE IF NOT EXISTS Customer_Order(
-           Customer_ID VARCHAR(5),
-           Product_ID VARCHAR(5),
-           Total_Payment DECIMAL(10, 2),
-           Order_Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-           Status ENUM("In Progress", "Shipped", "Complete"),
-           PRIMARY KEY(Customer_ID, Order_Timestamp)
         );
 
         -- CREATE TABLE Product
         CREATE TABLE IF NOT EXISTS Product(
            Product_ID VARCHAR(5),
-           Product_Name TEXT,
-           Product_Description TEXT,
+           Name VARCHAR(50),
+           Description TEXT,
            Price INT,
            PRIMARY KEY (Product_ID)
         );
 
-        CREATE TABLE IF NOT EXISTS Customer_Order(
+        -- CREATE TABLE Orders
+        CREATE TABLE IF NOT EXISTS Orders(
+           Order_ID VARCHAR(20),
            Customer_ID VARCHAR(5),
            Product_ID VARCHAR(5),
-           Total_Payment DECIMAL(10, 2),
-           Order_Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           Quantity INT,
            Status ENUM("In Progress", "Shipped", "Complete"),
-           PRIMARY KEY(Customer_ID, Order_Timestamp),
+           PRIMARY KEY(Order_ID),
            FOREIGN KEY(Customer_ID) REFERENCES Customer(Customer_ID)
            ON DELETE CASCADE ON UPDATE CASCADE,
            FOREIGN KEY(Product_ID) REFERENCES Product(Product_ID)
            ON DELETE CASCADE ON UPDATE CASCADE
         );
 
-        -- CREATE TABLE STORAGE
-        CREATE TABLE IF NOT EXISTS STORAGE(
+        -- CREATE TABLE Storage
+        CREATE TABLE IF NOT EXISTS Storage(
            Product_ID VARCHAR(5),
            Quantity INT,
            Threshold INT,
@@ -74,14 +70,19 @@ def create_tables_if_not_exist(connection):
             password VARCHAR(100)
         );
 
-        CREATE TABLE IF NOT EXISTS RESTOCK_REQUESTS(
+        -- CREATE TABLE Restock_Requests
+        CREATE TABLE IF NOT EXISTS Restock_Requests(
            Product_ID VARCHAR(5),
+           Type ENUM("Storage", "Order"),
+           Order_ID VARCHAR(20),
            Date_Time TIMESTAMP,
            Status ENUM("In Progress","Shipped",
            "Complete", "Cancelled"),
            Quantity INT,
            PRIMARY KEY (Product_ID, Date_Time),
            FOREIGN KEY(Product_ID) REFERENCES Product(Product_ID)
+           ON DELETE CASCADE ON UPDATE CASCADE,
+           FOREIGN KEY(Order_ID) REFERENCES Orders(Order_ID)
            ON DELETE CASCADE ON UPDATE CASCADE
         );
     """
@@ -101,7 +102,7 @@ def create_tables_if_not_exist(connection):
 
 
 def insert_products( connection ):
-    insert_query = """INSERT INTO Product (Product_ID, Product_Name, Product_Description, Price)
+    insert_query = """INSERT INTO Product (Product_ID, Name, Description, Price)
                         VALUES
                         ('P0001', 'Toyota Camry', 'The Toyota Camry, a renowned car model, is the perfect blend of style and performance. This car offers a comfortable and efficient driving experience for those seeking both luxury and reliability.', 1825000),
                         ('P0002', 'Ford F-150', 'The Ford F-150, is built to handle tough tasks with ease. Its robust build and powerful performance make it the ideal choice for work and adventure enthusiasts who require a dependable and rugged vehicle.', 2555000),
@@ -126,3 +127,30 @@ def insert_products( connection ):
             cursor.close()
     except Exception as e:
         print("Error Inserting Products:", e)
+
+def init_storage( connection ):
+    insert_query = """INSERT INTO Storage
+                        VALUES
+                        ('P0001', 10, 5, 10),
+                        ('P0002', 10, 5, 10),
+                        ('P0003', 10, 5, 10),
+                        ('P0004', 10, 5, 10),
+                        ('P0005', 10, 5, 10),
+                        ('P0006', 10, 5, 10),
+                        ('P0007', 10, 5, 10),
+                        ('P0008', 10, 5, 10),
+                        ('P0009', 10, 5, 10),
+                        ('P0010', 10, 5, 10);
+                    """
+    try:
+        if connection.is_connected():
+            cursor = connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM Storage")
+            count = cursor.fetchone()[0]
+            if count == 0:  # If Storage table is empty, insert data
+                cursor.execute(insert_query)
+                connection.commit()
+                print("Storage initialized successfully.")
+            cursor.close()
+    except Exception as e:
+        print("Error Inserting into Storage:", e)
