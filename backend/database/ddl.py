@@ -5,8 +5,6 @@ def create_db_if_not_exists( connection, database):
     try:
         if connection.is_connected():
             cursor = connection.cursor()
-            create_db_query = f"DROP DATABASE {database};"
-            cursor.execute(create_db_query)
             create_db_query = f"CREATE DATABASE IF NOT EXISTS {database};"
             cursor.execute(create_db_query)
             cursor.close()

@@ -1,3 +1,5 @@
 test
 node_modules
 client.js
+*__pycache__
+backend/consumer
