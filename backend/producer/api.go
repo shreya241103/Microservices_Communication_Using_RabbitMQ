@@ -8,34 +8,46 @@ import (
 )
 
 func GetProducts(c *gin.Context) {
-	fmt.Println("Here Now")
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("GET Request for Products.")
 	var message Message
 	message.CustomerID = ""
 	message.Type = "read_products"
 	go ProduceReadMessage(message)
 	result := <-ProductsMessageChannel
-	fmt.Println("Result Data:", result["data"])
 	c.JSON(http.StatusOK, result["data"])
+	fmt.Println("Response sent.")
+	fmt.Println("--------------------------------------------------")
+	fmt.Println()
 }
 
 func GetOrdersByID(c *gin.Context) {
 	customer_id := c.Param("id")
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("GET Request for Orders from Customer_ID ", customer_id)
 	var message Message
 	message.CustomerID = customer_id
 	message.Type = "read_orders"
 	go ProduceReadMessage(message)
 
 	result := <-OrdersMessageChannel
-	fmt.Println("Result Data:", result["data"])
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, result["data"])
+	fmt.Println("Response sent to Customer_ID ", customer_id)
+	fmt.Println("--------------------------------------------------")
+	fmt.Println()
 }
 
 func PostOrder(c *gin.Context) {
 	var newOrder Order
-
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("POST Request for Orders from Customer_ID ", newOrder.Customer_ID)
 	if err := c.BindJSON(&newOrder); err != nil {
 		return
 	}
-
 	fmt.Println("Order: ", newOrder)
+
+	ProduceOrderMessage(newOrder)
+
+	fmt.Println("Request Handled.")
+	fmt.Println("--------------------------------------------------")
 }
