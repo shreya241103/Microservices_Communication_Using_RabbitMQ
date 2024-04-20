@@ -38,10 +38,11 @@ def listen_for_requests():
 
     def callback(ch, method, properties, body):
         message = json.loads(body.decode())
+        print("--------------------------------------------------")
         print("Received message:", message)
 
         # Create an empty order dictionary
-        order = {}  
+        order = {}
 
         # Assign values from the message to the order dictionary based on keys
         order["Order_ID"] = message.get("Order_ID", "")
@@ -66,13 +67,14 @@ def listen_for_requests():
             # Convert the `order` dictionary to a JSON string
             data_to_publish_json = json.dumps(data_to_publish)
             print(data_to_publish_json)
-            
+
             # Publish message to CheckStock Queue
             channel.basic_publish(
                 exchange='',
                 routing_key='CheckStock',
                 body=data_to_publish_json
             )
+        print("--------------------------------------------------")
 
     channel.basic_consume(queue='New_Order', on_message_callback=callback, auto_ack=True)
 
@@ -80,6 +82,11 @@ def listen_for_requests():
     channel.start_consuming()
 
 if __name__ == "__main__":
+    print("##################################################")
+    print("       Order-Processing Microservice Running")
+    print("##################################################")
+    print()
+
     listen_for_requests()
 
 

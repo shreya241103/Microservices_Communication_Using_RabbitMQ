@@ -7,7 +7,6 @@ import mysql.connector
 
 port = 3406
 password = "password"
-print("Database Microservice Running")
 
 def database_init():
     try:
@@ -42,7 +41,6 @@ def get_connection():
         print("Failed to connect to MySQL database:", error)
 
 def listen_for_requests():
-    print("Database Read Service Listening for Requests..")
 
     amqp_url = os.environ['AMQP_URL']
     url_params = pika.URLParameters(amqp_url)
@@ -55,6 +53,7 @@ def listen_for_requests():
 
     def callback(ch, method, properties, body):
         message = json.loads(body.decode())
+        print("--------------------------------------------------")
         print("Received message:", message)
 
         request_type = message.get('type')
@@ -64,7 +63,7 @@ def listen_for_requests():
             if connection:
                 products_json = crud.read_products(connection)
                 if products_json:
-                    print("Sending products to the client")
+                    print("Publishing products to Data Queue.")
                     data_to_publish = json.dumps({"table": "products", "data": products_json})
                     channel.basic_publish(
                         exchange='',
@@ -77,23 +76,29 @@ def listen_for_requests():
                 customer_id = message.get('customer_id')
                 orders_json = crud.read_orders(connection, customer_id)
                 if orders_json:
-                    print("Sending orders to the client")
+                    print(f"Publishing orders of Customer {customer_id} to Data Queue.")
                     data_to_publish = json.dumps({"table": "orders", "data": orders_json, "customer_id": customer_id})
                     channel.basic_publish(
                         exchange='',
                         routing_key='Data',
                         body=data_to_publish
                     )
+        print("--------------------------------------------------\n")
 
     channel.basic_consume(queue='Read', on_message_callback=callback, auto_ack=True)
-
-    print('Waiting for messages...')
+    print()
+    print("--------------------------------------------------")
+    print("            Listening For Read Requests")
+    print("--------------------------------------------------")
+    print()
+    print('Waiting for messages..')
     channel.start_consuming()
 
 if __name__ == "__main__":
-    database_init()
-    print()
+    print("##################################################")
+    print("         Database Microservice Running")
     print("##################################################")
     print()
-    crud.read_products(get_connection())
+
+    database_init()
     listen_for_requests()

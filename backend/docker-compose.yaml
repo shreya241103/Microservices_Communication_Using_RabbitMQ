@@ -29,17 +29,6 @@ services:
     ports:
       - "8080:8080"
 
-  consumer:
-    build:
-      context: ./consumer
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-    networks:
-      - app_network
-
   healthcheck:
     build:
       context: ./healthcheck
@@ -63,7 +52,7 @@ services:
       AMQP_URL: 'amqp://rabbitmq?connection_attempts=10&retry_delay=10'
     networks:
       - app_network
-      
+
   order-processing:
     build:
       context: ./order-processing
@@ -91,7 +80,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
       interval: 10s
       retries: 5
 

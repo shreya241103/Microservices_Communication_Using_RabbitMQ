@@ -22,8 +22,8 @@ def read_products(connection):
             # Convert list of dictionaries to JSON
             products_json = json.dumps(products_dict, indent=4)
 
-            print("Products Fetched:")
-            print(products_json)
+            # print("Products Fetched:")
+            # print(products_json)
 
             return products_json
 
@@ -34,7 +34,7 @@ def read_orders(connection, customer_id):
     try:
         if connection.is_connected():
             cursor = connection.cursor()
-            select_query = f"""SELECT * FROM Order WHERE Customer_ID = {customer_id}
+            select_query = f"""SELECT * FROM Orders WHERE Customer_ID = '{customer_id}'
                             ORDER BY Order_ID;"""
             cursor.execute(select_query)
             orders = cursor.fetchall()
@@ -54,8 +54,8 @@ def read_orders(connection, customer_id):
             # Convert list of dictionaries to JSON
             orders_json = json.dumps(orders_dict, indent=4)
 
-            print("Orders Fetched:")
-            print(orders_json)
+            # print("Orders Fetched:")
+            # print(orders_json)
 
             return orders_json
 

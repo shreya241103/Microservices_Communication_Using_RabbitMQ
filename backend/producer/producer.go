@@ -15,6 +15,11 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
+	fmt.Println("##################################################")
+	fmt.Println("         Producer Microservice Running")
+	fmt.Println("##################################################")
+	fmt.Println()
+
 	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -46,7 +51,12 @@ func main() {
 	go ConsumeDataMessages()
 	router := gin.Default()
 	router.GET("/products", GetProducts)
-	router.GET("/orders:id", GetOrdersByID)
-	router.POST("/order", PostOrder)
+	router.GET("/orders/:id", GetOrdersByID)
+	router.POST("/orders", PostOrder)
 	router.Run(":8080")
+	fmt.Println()
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("           HTTP Server Listening on 8080")
+	fmt.Println("--------------------------------------------------")
+	fmt.Println()
 }
