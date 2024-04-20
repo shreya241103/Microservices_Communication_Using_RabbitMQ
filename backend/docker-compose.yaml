@@ -63,6 +63,19 @@ services:
       AMQP_URL: 'amqp://rabbitmq?connection_attempts=10&retry_delay=10'
     networks:
       - app_network
+      
+  order-processing:
+    build:
+      context: ./order-processing
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      AMQP_URL: 'amqp://rabbitmq?connection_attempts=10&retry_delay=10'
+    networks:
+      - app_network
 
   mysql:
     image: mysql:latest
