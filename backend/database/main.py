@@ -1,3 +1,4 @@
+import os
 import ddl
 import crud
 import pika
@@ -6,6 +7,7 @@ import mysql.connector
 
 port = 3406
 password = "password"
+print("Database Microservice Running")
 
 def database_init():
     try:
@@ -42,8 +44,11 @@ def get_connection():
 def listen_for_requests():
     print("Database Read Service Listening for Requests..")
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
-    channel = connection.channel()
+    amqp_url = os.environ['AMQP_URL']
+    url_params = pika.URLParameters(amqp_url)
+
+    rabbitmq_connection = pika.BlockingConnection(url_params)
+    channel = rabbitmq_connection.channel()
 
     channel.queue_declare(queue='Read')
     channel.queue_declare(queue='Data')
@@ -91,4 +96,4 @@ if __name__ == "__main__":
     print("##################################################")
     print()
     crud.read_products(get_connection())
-    # listen_for_requests()
+    listen_for_requests()
