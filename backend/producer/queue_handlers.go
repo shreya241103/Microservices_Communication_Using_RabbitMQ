@@ -29,7 +29,23 @@ func ProduceReadMessage(msg Message) {
 			Body:        body,
 		})
 	failOnError(err, "Failed to publish a message")
-	fmt.Println(" [x] Sent", msg)
+	fmt.Println(" [x] Message Sent to Read Queue: ", msg)
+}
+
+func ProduceOrderMessage(msg Order) {
+	body, err := json.Marshal(msg)
+	failOnError(err, "Failed to marshal JSON")
+	err = Ch.Publish(
+		"",          // exchange
+		"New_Order", // routing key
+		false,       // mandatory
+		false,       // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+	failOnError(err, "Failed to publish a message")
+	fmt.Println(" [x] Message Sent to New_Order Queue: ", msg)
 }
 
 func ConsumeDataMessages() {
@@ -48,7 +64,7 @@ func ConsumeDataMessages() {
 		var data map[string]interface{}
 		err := json.Unmarshal(d.Body, &data)
 		failOnError(err, "Failed to unmarshal JSON")
-		fmt.Printf(" [x] Received data\n")
+		fmt.Println(" [x] Received Data from Data Queue")
 		// fmt.Printf(" [x] Received data from %s\n", data["table"])
 		// fmt.Println("Data:", data["data"])
 
