@@ -11,8 +11,13 @@ def create_db_if_not_exists( connection, database):
             connection.database = database
             create_tables_if_not_exist( connection )
             insert_products(connection)
+            init_customers(connection)
             init_storage(connection)
-            print("Database Initialized.")
+            print()
+            print("--------------------------------------------------")
+            print("          Database Inventory_DB Initialized")
+            print("--------------------------------------------------")
+            print()
 
     except Exception as e:
         print("Error Creating Database:", e)
@@ -44,7 +49,11 @@ def create_tables_if_not_exist(connection):
            Product_ID VARCHAR(5),
            Quantity INT,
            Status ENUM("In Progress", "Shipped", "Complete"),
-           PRIMARY KEY(Order_ID)
+           PRIMARY KEY(Order_ID),
+           FOREIGN KEY(Customer_ID) REFERENCES Customer(Customer_ID)
+           ON DELETE CASCADE ON UPDATE CASCADE,
+           FOREIGN KEY(Product_ID) REFERENCES Product(Product_ID)
+           ON DELETE CASCADE ON UPDATE CASCADE
         );
 
         -- CREATE TABLE Storage
@@ -53,7 +62,9 @@ def create_tables_if_not_exist(connection):
            Quantity INT,
            Threshold INT,
            Restock_Time INT,
-           PRIMARY KEY(Product_ID)
+           PRIMARY KEY(Product_ID),
+           FOREIGN KEY(Product_ID)
+           REFERENCES Product(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE
         );
 
         -- CREATE TABLE Admin
@@ -71,7 +82,11 @@ def create_tables_if_not_exist(connection):
            Status ENUM("In Progress","Shipped",
            "Complete", "Cancelled"),
            Quantity INT,
-           PRIMARY KEY (Product_ID, Date_Time)
+           PRIMARY KEY (Product_ID, Date_Time),
+           FOREIGN KEY(Product_ID) REFERENCES Product(Product_ID)
+           ON DELETE CASCADE ON UPDATE CASCADE,
+           FOREIGN KEY(Order_ID) REFERENCES Orders(Order_ID)
+           ON DELETE CASCADE ON UPDATE CASCADE
         );
     """
 
@@ -115,6 +130,29 @@ def insert_products( connection ):
             cursor.close()
     except Exception as e:
         print("Error Inserting Products:", e)
+
+def init_customers(connection):
+    insert_query = """INSERT INTO Customer(Customer_ID, Name)
+                        VALUES
+                        ('C0001', 'A'),
+                        ('C0002', 'B'),
+                        ('C0003', 'C'),
+                        ('C0004', 'D'),
+                        ('C0005', 'E'),
+                        ('C0006', 'F');
+                    """
+    try:
+        if connection.is_connected():
+            cursor = connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM Customer")
+            count = cursor.fetchone()[0]
+            if count == 0:  # If Storage table is empty, insert data
+                cursor.execute(insert_query)
+                connection.commit()
+                print("Customers Added Successfully.")
+            cursor.close()
+    except Exception as e:
+        print("Error Inserting into Customer:", e)
 
 def init_storage( connection ):
     insert_query = """INSERT INTO Storage
