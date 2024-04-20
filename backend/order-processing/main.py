@@ -84,10 +84,12 @@ def listen_for_requests():
 
         # Assign values from the message to the order dictionary based on keys
         Order_ID = message.get("Order_ID", "")
-        flag = message.get("Availability", "")
+        flag = message.get("Available", "")
 
+        print("Hello")
         connection = get_connection()
         if connection and flag == "yes":
+            print("Bye")
             # Insert Order to DB
             print("Updating info to Orders Table")
             crud.update_order(connection, Order_ID)
