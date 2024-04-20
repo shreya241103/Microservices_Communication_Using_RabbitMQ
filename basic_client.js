@@ -20,6 +20,21 @@ function printProductsTable(productsData) {
     console.log(table.toString());
 }
 
+function printOrdersTable(ordersData) {
+    // console.log('Type of productsData:', typeof productsData);
+    ordersData = JSON.parse(ordersData);
+
+    const table = new Table({
+        head: ['Order ID', 'Product ID', 'Quantity', 'Status'],
+        colWidths: [15, 30, 15]
+    });
+    ordersData.forEach(order => {
+        table.push([order.Order_ID, order.Product_ID, order.Quantity, order.Status]);
+    });
+
+    console.log(table.toString());
+}
+
 async function getProducts() {
     const url = `${URL}/products`;
     try {
@@ -32,8 +47,8 @@ async function getProducts() {
     }
 }
 
-async function getOrders(customerId) {
-    const url = `${URL}/orders/${customerId}`;
+async function getOrders(id) {
+    const url = `${URL}/orders/${id}`;
     try {
         const response = await axios.get(url);
         return response.data;
@@ -43,14 +58,20 @@ async function getOrders(customerId) {
     }
 }
 
-async function placeOrder(customerId) {
+async function placeOrder( Customer_ID, Product_ID, Quantity) {
+    // Order_ID -> Customer_ID_CurrentTimestamp
+    const timestamp = new Date().getTime();
+    const Order_ID = `${Customer_ID}_${timestamp}`;
     const orderData = {
-        customerId: customerId, // Assuming orderData includes the customer ID
-        // Add more order details as needed
+        Order_ID:       Order_ID,
+        Customer_ID:    Customer_ID,
+        Product_ID:     Product_ID,
+        Quantity:       Quantity
     };
     const url = `${URL}/orders`;
     try {
         const response = await axios.post(url, orderData);
+        console.log(`Successfully Placed Order for Product: ${Product_ID}, Quantity: ${Quantity} Against Customer: ${Customer_ID}.`)
         return response.data;
     } catch (error) {
         console.error(`Error posting order: ${error.message}`);
@@ -75,7 +96,18 @@ async function requestLoop(customerId) {
 
         switch (parseInt(choice)) {
             case 1:
-                await placeOrder(customerId);
+                console.log()
+                const { Product_ID } = await prompt.get(['Product_ID']);
+                const { Quantity } = await prompt.get(['Quantity']);
+                const parsedQuantity = parseInt(Quantity);
+
+                if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+                    console.error('Invalid quantity. Quantity must be a positive integer.');
+                    console.error('Please Retry.');
+                    break;
+                }
+
+                await placeOrder( customerId, Product_ID, parsedQuantity);
                 break;
             case 2:
                 const products = await getProducts();
@@ -89,8 +121,11 @@ async function requestLoop(customerId) {
             case 3:
                 const orders = await getOrders(customerId);
                 if (orders) {
-                    console.log('Orders:');
-                    orders.forEach(order => console.log(order));
+                    console.log('\nOrders:');
+                    printOrdersTable(orders)
+                } else {
+                    console.log(`No Previously Placed Orders for Customer ${customerId}.`)
+                    console.log()
                 }
                 break;
             case 4:
