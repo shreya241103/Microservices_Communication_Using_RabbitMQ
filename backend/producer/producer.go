@@ -38,6 +38,7 @@ func main() {
 		nil,    // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
+
 	_, err = Ch.QueueDeclare(
 		"Data", // name
 		false,  // durable
@@ -47,16 +48,28 @@ func main() {
 		nil,    // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
+
+	_, err = Ch.QueueDeclare(
+		"HealthCheck", // name
+		false,         // durable
+		false,         // delete when unused
+		false,         // exclusive
+		false,         // no-wait
+		nil,           // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
 	fmt.Println("RabbitMQ Queues Declared.")
 	go ConsumeDataMessages()
 	router := gin.Default()
 	router.GET("/products", GetProducts)
 	router.GET("/orders/:id", GetOrdersByID)
 	router.POST("/orders", PostOrder)
-	router.Run(":8080")
 	fmt.Println()
 	fmt.Println("--------------------------------------------------")
 	fmt.Println("           HTTP Server Listening on 8080")
 	fmt.Println("--------------------------------------------------")
 	fmt.Println()
+	go SendHeartbeat()
+	router.Run(":8080")
 }
