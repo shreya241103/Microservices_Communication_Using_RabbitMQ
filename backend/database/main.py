@@ -3,6 +3,8 @@ import ddl
 import crud
 import pika
 import json
+import time
+import threading
 import mysql.connector
 
 port = 3406
@@ -94,6 +96,28 @@ def listen_for_requests():
     print('Waiting for messages..')
     channel.start_consuming()
 
+def heartbeat():
+    print("--------------------------------------------------")
+    print("              Heartbeat Initialized")
+    print("--------------------------------------------------")
+    amqp_url = os.environ['AMQP_URL']
+    url_params = pika.URLParameters(amqp_url)
+
+    rabbitmq_connection = pika.BlockingConnection(url_params)
+    channel = rabbitmq_connection.channel()
+
+    channel.queue_declare(queue='HealthCheck')
+    message = json.dumps({"Microservice_Name": "database"})
+
+    while True:
+        channel.basic_publish(
+            exchange='',
+            routing_key='HealthCheck',
+            body = message
+        )
+        print(" [x] Heartbeat Sent: ", message)
+        time.sleep(10)
+
 if __name__ == "__main__":
     print("##################################################")
     print("         Database Microservice Running")
@@ -101,4 +125,12 @@ if __name__ == "__main__":
     print()
 
     database_init()
-    listen_for_requests()
+
+    listen_thread = threading.Thread(target=listen_for_requests)
+    heartbeat_thread = threading.Thread(target=heartbeat)
+
+    listen_thread.start()
+    heartbeat_thread.start()
+
+    listen_thread.join()
+    heartbeat_thread.join()
