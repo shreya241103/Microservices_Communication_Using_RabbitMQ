@@ -67,7 +67,7 @@ func ProduceHealthCheckMessage(msg Heartbeat) {
 			Body:        body,
 		})
 	failOnError(err, "Failed to publish a message")
-	fmt.Println(" [x] Message Sent to Read Queue: ", msg)
+	fmt.Println(" [x] Heartbeat Sent: ", msg)
 }
 
 func ProduceOrderMessage(msg Order) {
