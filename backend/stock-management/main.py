@@ -43,26 +43,30 @@ def listen_for_requests():
 
         # Message Format: {Order_ID: str, Product_ID: str, Quantity: int}
         # Process Message
-        Order_ID = message.get('Order_ID')
-        Product_ID = message.get('Product_ID')
-        Quantity = message.get('Quantity')
+        order = {}
+        order["Order_ID"] = message.get('Order_ID')
+        order["Product_ID"] = message.get('Product_ID')
+        order["Quantity"] = message.get('Quantity')
 
         connection = get_connection()
 
         if connection:
             # DO STUFF
             # Database Operations
-
+            result = crud.order_status(connection, order)
             # Publish Message to StockAvailable
             # Message Format: {Order_ID: str, Available: bool}
+            if result == "True":
+                print(f"Publishing message to StockAvailable Queue.")
+                data_to_publish = json.dumps({"Order_ID": order["Order_ID"], "Available": "yes"})
+                channel.basic_publish(
+                    exchange = '',
+                    routing_key = 'StockAvailable',
+                    body = data_to_publish
+                )
+            else:
+                print("Not available")
 
-            print(f"Publishing message to StockAvailable Queue.")
-            data_to_publish = json.dumps({"Order_ID": "", "Available": ""})
-            channel.basic_publish(
-                exchange = '',
-                routing_key = 'StockAvailable',
-                body = data_to_publish
-            )
         print("--------------------------------------------------\n")
 
     channel.basic_consume(queue='CheckStock', on_message_callback=callback, auto_ack=True)
