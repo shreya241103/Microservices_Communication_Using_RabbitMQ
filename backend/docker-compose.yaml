@@ -66,6 +66,19 @@ services:
     networks:
       - app_network
 
+  stock-management:
+    build:
+      context: ./stock-management
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      AMQP_URL: 'amqp://rabbitmq?connection_attempts=10&retry_delay=10'
+    networks:
+      - app_network
+
   mysql:
     image: mysql:latest
     restart: always
