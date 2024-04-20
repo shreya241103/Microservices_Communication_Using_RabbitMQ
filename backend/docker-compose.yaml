@@ -4,6 +4,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.9-management
     ports:
+      - "5672:5672"
       - "15672:15672"  # For RabbitMQ management interface
     environment:
       RABBITMQ_DEFAULT_USER: guest
@@ -45,6 +46,8 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
+    environment:
+      AMQP_URL: 'amqp://rabbitmq?connection_attempts=10&retry_delay=10'
     networks:
       - app_network
 
