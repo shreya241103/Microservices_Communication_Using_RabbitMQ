@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/streadway/amqp"
 )
@@ -10,6 +11,9 @@ import (
 type Message struct {
 	Type       string `json:"type"`
 	CustomerID string `json:"customer_id"`
+}
+type Heartbeat struct {
+	Microservice_name string `json:"Microservice_Name"`
 }
 
 var ProductsMessageChannel = make(chan map[string]interface{})
@@ -24,6 +28,40 @@ func ProduceReadMessage(msg Message) {
 		"Read", // routing key
 		false,  // mandatory
 		false,  // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+	failOnError(err, "Failed to publish a message")
+	fmt.Println(" [x] Message Sent to Read Queue: ", msg)
+}
+
+func SendHeartbeat() {
+	var heartbeat Heartbeat
+	heartbeat.Microservice_name = "producer"
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("         Heartbeat for Producer Initialized")
+	fmt.Println("--------------------------------------------------")
+	fmt.Println()
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			ProduceHealthCheckMessage(heartbeat)
+		}
+	}
+}
+
+func ProduceHealthCheckMessage(msg Heartbeat) {
+	body, err := json.Marshal(msg)
+	failOnError(err, "Failed to marshal JSON")
+	err = Ch.Publish(
+		"",            // exchange
+		"HealthCheck", // routing key
+		false,         // mandatory
+		false,         // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
