@@ -22,3 +22,15 @@ def insert_order(connection, order):
             
     except Exception as e:
         print("Error Inserting Order:", e)
+
+def update_order(connection, order_id):
+    try:
+        if connection.is_connected():
+           # Update order status to 'Completed'
+            query = "UPDATE Orders SET Status = 'Complete' WHERE Order_ID = %s"
+            cursor = connection.cursor()
+            cursor.execute(query, (order_id,))
+            connection.commit()
+            print("Order status updated to 'Completed'")
+    except Exception as e:
+        print("Error Updating Status:", e)
