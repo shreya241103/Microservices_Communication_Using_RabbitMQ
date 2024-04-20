@@ -33,8 +33,9 @@ def listen_for_requests():
 
     channel.queue_declare(queue='New_Order')
     channel.queue_declare(queue='CheckStock')
+    channel.queue_declare(queue='StockAvailable')
 
-    def callback(ch, method, properties, body):
+    def callback_New_Order(ch, method, properties, body):
         message = json.loads(body.decode())
         print("--------------------------------------------------")
         print("Received message:", message)
@@ -74,8 +75,24 @@ def listen_for_requests():
             )
         print("--------------------------------------------------")
 
-    channel.basic_consume(queue='New_Order', on_message_callback=callback, auto_ack=True)
+    def callback_StockAvailable(ch, method, properties, body):
+        message = json.loads(body.decode())
+        print("--------------------------------------------------")
+        print("Received message:", message)
 
+        # Assign values from the message to the order dictionary based on keys
+        Order_ID = message.get("Order_ID", "")
+        flag = message.get("Availability", "")
+
+        connection = get_connection()
+        if connection and flag == "yes":
+            # Insert Order to DB
+            print("Updating info to Orders Table")
+            crud.update_order(connection, Order_ID)
+        print("--------------------------------------------------")
+
+    channel.basic_consume(queue='New_Order', on_message_callback=callback_New_Order, auto_ack=True)
+    channel.basic_consume(queue='StockAvailable', on_message_callback=callback_StockAvailable, auto_ack=True)
     print('Waiting for messages...')
     channel.start_consuming()
 
