@@ -51,9 +51,9 @@ func handleMessages(d amqp.Delivery) {
 
 	switch message.MicroserviceName {
 	case "Order_Processing":
-		lastMessageTimedatabase = time.Now()
-	case "database":
 		lastMessageTimeorder_processing = time.Now()
+	case "database":
+		lastMessageTimedatabase = time.Now()
 	case "producer":
 		lastMessageTimeproducer = time.Now()
 	case "stock-management":
