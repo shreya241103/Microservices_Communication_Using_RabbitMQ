@@ -47,10 +47,8 @@ func SendHeartbeat() {
 	defer ticker.Stop()
 
 	for {
-		select {
-		case <-ticker.C:
-			ProduceHealthCheckMessage(heartbeat)
-		}
+		<-ticker.C
+		ProduceHealthCheckMessage(heartbeat)
 	}
 }
 
