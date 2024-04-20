@@ -53,7 +53,7 @@ func handleMessages(d amqp.Delivery) {
 	case "Order_Processing":
 		lastMessageTimedatabase = time.Now()
 	case "database":
-		lastMessageTimeOrder_Processing = time.Now()
+		lastMessageTimeorder_processing = time.Now()
 	case "producer":
 		lastMessageTimeproducer = time.Now()
 	case "stock-management":
@@ -74,7 +74,7 @@ func checkProducers() {
 			fmt.Println("Database is not working")
 		}
 		
-		if currentTime.Sub(lastMessageTimeOrder_Processing) > Order_ProcessingThreshold*time.Second {
+		if currentTime.Sub(lastMessageTimeorder_processing) > order_processingThreshold*time.Second {
 			fmt.Println("Order Processing is not working")
 		}
 		if currentTime.Sub(lastMessageTimeproducer) > producerThreshold*time.Second {
