@@ -6,7 +6,6 @@ import mysql.connector
 
 port = 3406
 password = "password"
-print("Order Processing Microservice Running")
 
 def get_connection():
     try:
@@ -25,7 +24,6 @@ def get_connection():
         print("Failed to connect to MySQL database:", error)
 
 def listen_for_requests():
-    print("Database Read Service Listening for Requests..")
 
     amqp_url = os.environ['AMQP_URL']
     url_params = pika.URLParameters(amqp_url)
