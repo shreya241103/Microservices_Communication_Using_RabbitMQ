@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -13,15 +14,23 @@ import (
 )
 
 const (
-	producer1Threshold = 5 // Threshold in seconds for Producer 1
-	producer2Threshold = 5 // Threshold in seconds for Producer 2
+	databaseThreshold = 15 // Threshold in seconds for Producer 1
+	order_processingThreshold = 15 // Threshold in seconds for Producer 2
+	producerThreshold = 15
+	stock_managementThreshold = 15
 )
 
 var (
-	lastMessageTimeProducer1 time.Time
-	lastMessageTimeProducer2 time.Time
+	lastMessageTimedatabase time.Time
+	lastMessageTimeorder_processing time.Time
+	lastMessageTimeproducer time.Time
+	lastMessageTimestock_management time.Time
 	mutex                    sync.Mutex
 )
+
+type Message struct {
+	MicroserviceName string `json:"Microservice_Name"`
+}
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -30,29 +39,53 @@ func failOnError(err error, msg string) {
 }
 
 func handleMessages(d amqp.Delivery) {
+	var message Message
+	err := json.Unmarshal(d.Body, &message)
+	if err != nil {
+		log.Printf("Error decoding message: %s", err)
+		return
+	}
+
 	mutex.Lock()
 	defer mutex.Unlock()
-	if string(d.Body) == "Alive producer1" {
-		lastMessageTimeProducer1 = time.Now()
-	} else if string(d.Body) == "Alive producer2" {
-		lastMessageTimeProducer2 = time.Now()
+
+	switch message.MicroserviceName {
+	case "Order_Processing":
+		lastMessageTimeorder_processing = time.Now()
+	case "database":
+		lastMessageTimedatabase = time.Now()
+	case "producer":
+		lastMessageTimeproducer = time.Now()
+	case "stock-management":
+		lastMessageTimestock_management = time.Now()
+
+
 	}
 }
 
 func checkProducers() {
 	for {
-		time.Sleep(1* time.Second) // Check every 30 seconds
+		time.Sleep(5 * time.Second) // Check every 30 seconds
 
 		mutex.Lock()
 		currentTime := time.Now()
-		// Check if Producer 1 has sent a message within the threshold
-		if currentTime.Sub(lastMessageTimeProducer1) > producer1Threshold*time.Second {
-			fmt.Println("Producer 1 is not working")
+		
+		if currentTime.Sub(lastMessageTimedatabase) > databaseThreshold*time.Second {
+			fmt.Println("Database is not working")
 		}
-		// Check if Producer 2 has sent a message within the threshold
-		if currentTime.Sub(lastMessageTimeProducer2) > producer2Threshold*time.Second {
-			fmt.Println("Producer 2 is not working")
+		
+		if currentTime.Sub(lastMessageTimeorder_processing) > order_processingThreshold*time.Second {
+			fmt.Println("Order Processing is not working")
 		}
+		if currentTime.Sub(lastMessageTimeproducer) > producerThreshold*time.Second {
+			fmt.Println("Producer is not working")
+		}
+		
+		if currentTime.Sub(lastMessageTimestock_management) > stock_managementThreshold*time.Second {
+			fmt.Println("Stock Management is not working")
+		}
+
+		
 		mutex.Unlock()
 	}
 }
