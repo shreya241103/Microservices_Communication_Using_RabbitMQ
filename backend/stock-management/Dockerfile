@@ -5,7 +5,6 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 COPY main.py .
-COPY ddl.py .
 COPY crud.py .
 COPY requirements.txt .
 
