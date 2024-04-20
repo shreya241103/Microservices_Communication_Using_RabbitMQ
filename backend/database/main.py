@@ -1,16 +1,20 @@
 import ddl
 import crud
 import pika
+import json
 import mysql.connector
+
+port = 3406
+password = "password"
 
 def database_init():
     try:
         # Connect to MySQL database using host machine's IP address
         connection = mysql.connector.connect(
-            host="localhost",
-            port=3306,
-            user="root",
-            password="root"
+            host = "host.docker.internal",
+            port = port,
+            user = "root",
+            password = password
         )
         if connection.is_connected():
             print("Connected to MySQL database")
@@ -23,11 +27,11 @@ def get_connection():
     try:
         # Connect to MySQL database using host machine's IP address
         connection = mysql.connector.connect(
-            host="localhost",
-            port=3306,
-            user="root",
-            password="root",
-            database="Inventory_DB"
+            host = "host.docker.internal",
+            port = port,
+            user = "root",
+            password = password,
+            database = "Inventory_DB"
         )
         if connection.is_connected():
             return connection
@@ -36,35 +40,55 @@ def get_connection():
         print("Failed to connect to MySQL database:", error)
 
 def listen_for_requests():
-    print("Listening for requests")
+    print("Database Read Service Listening for Requests..")
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
     channel = connection.channel()
 
-    channel.queue_declare(queue='requests')
-    channel.queue_declare(queue='responses')
+    channel.queue_declare(queue='Read')
+    channel.queue_declare(queue='Data')
 
     def callback(ch, method, properties, body):
-        request = body.decode()
-        print("Received message:", request)
+        message = json.loads(body.decode())
+        print("Received message:", message)
 
-        if request == "read_products":
+        request_type = message.get('type')
+
+        if request_type == "read_products":
             connection = get_connection()
             if connection:
                 products_json = crud.read_products(connection)
                 if products_json:
                     print("Sending products to the client")
-
+                    data_to_publish = json.dumps({"table": "products", "data": products_json})
                     channel.basic_publish(
                         exchange='',
-                        routing_key='responses',
-                        body=products_json
+                        routing_key='Data',
+                        body=data_to_publish
+                    )
+        elif request_type == "read_orders":
+            connection = get_connection()
+            if connection:
+                customer_id = message.get('customer_id')
+                orders_json = crud.read_orders(connection, customer_id)
+                if orders_json:
+                    print("Sending orders to the client")
+                    data_to_publish = json.dumps({"table": "orders", "data": orders_json, "customer_id": customer_id})
+                    channel.basic_publish(
+                        exchange='',
+                        routing_key='Data',
+                        body=data_to_publish
                     )
 
-    channel.basic_consume(queue='requests', on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue='Read', on_message_callback=callback, auto_ack=True)
 
+    print('Waiting for messages...')
     channel.start_consuming()
 
 if __name__ == "__main__":
     database_init()
-    listen_for_requests()
+    print()
+    print("##################################################")
+    print()
+    crud.read_products(get_connection())
+    # listen_for_requests()
