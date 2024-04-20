@@ -4,7 +4,7 @@ def insert_order(connection, order):
     try:
         if connection.is_connected():
             # Insert Order to Database here
-            query = "INSERT INTO Orders (Order_ID, Customer_ID, Product_ID, Quantity) VALUES (%s, %s, %s, %s)"
+            query = "INSERT INTO Orders (Order_ID, Customer_ID, Product_ID, Quantity,Status) VALUES (%s, %s, %s, %s,%s)"
             cursor = connection.cursor()
 
             # Extract values from the order dictionary
@@ -14,7 +14,7 @@ def insert_order(connection, order):
             quantity = order.get("Quantity", 0)  # Assuming default quantity is 0
 
             # Execute the SQL query
-            cursor.execute(query, (order_id, customer_id, product_id, quantity))
+            cursor.execute(query, (order_id, customer_id, product_id, quantity,"In Progress"))
 
             # Commit the transaction
             connection.commit()
