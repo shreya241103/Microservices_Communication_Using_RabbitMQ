@@ -12,5 +12,4 @@ type Order struct {
 	Customer_ID string `json:"Customer_ID"`
 	Product_ID  string `json:"Product_ID"`
 	Quantity    int    `json:"Quantity"`
-	Status      int    `json:"Status"`
 }
