@@ -5,6 +5,7 @@ import json
 import time
 import threading
 import mysql.connector
+import crud
 
 port = 3406
 password = "password"
@@ -65,7 +66,25 @@ def listen_for_requests():
                     body = data_to_publish
                 )
             else:
-                print("Not available")
+                print(f"Publishing message to StockAvailable Queue.")
+                data_to_publish = json.dumps({"Order_ID": order["Order_ID"], "Available": "no"})
+                channel.basic_publish(
+                    exchange = '',
+                    routing_key = 'StockAvailable',
+                    body = data_to_publish
+                )
+            
+                restock_time = crud.get_restock_time(connection, order["Product_ID"])
+                existing_quantity = crud.get_storage_quantity(connection, order["Product_ID"])
+                if restock_time is not None:
+                    request = {
+                    "Product_ID": order["Product_ID"],
+                    "Order_ID": order["Order_ID"],
+                    "Date_Time":(order["Quantity"] - existing_quantity) * restock_time,
+                    "Quantity": order["Quantity"] - existing_quantity
+                    }
+                    crud.insert_restock_request(connection, request)
+
 
         print("--------------------------------------------------\n")
 
