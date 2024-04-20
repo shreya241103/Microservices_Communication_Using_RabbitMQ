@@ -1,5 +1,4 @@
 import os
-import ddl
 import crud
 import pika
 import json
