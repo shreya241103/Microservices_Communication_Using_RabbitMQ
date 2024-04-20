@@ -40,22 +40,38 @@ def listen_for_requests():
         message = json.loads(body.decode())
         print("Received message:", message)
 
-        order = { "order_id": "", "customer_id": ""}
+        # Create an empty order dictionary
+        order = {}  
+
+        # Assign values from the message to the order dictionary based on keys
+        order["Order_ID"] = message.get("Order_ID", "")
+        order["Customer_ID"] = message.get("Customer_ID", "")
+        order["Product_ID"] = message.get("Product_ID", "")
+        order["Quantity"] = message.get("Quantity", "")
 
         connection = get_connection()
         if connection:
             # Insert Order to DB
-            print("Sending order info to stock management")
+            print("Sending order info to Orders Table")
 
             crud.insert_order(connection, order)
-            # Data give to stock
-            data_to_publish = ""
 
+            # Data give to stock
+            data_to_publish = {}
+            data_to_publish["Order_ID"] = order["Order_ID"]
+            data_to_publish["Product_ID"] = order["Product_ID"]
+            data_to_publish["Quantity"] = order["Quantity"]
+            print("Sending order info to Stock Queue")
+
+            # Convert the `order` dictionary to a JSON string
+            data_to_publish_json = json.dumps(data_to_publish)
+            print(data_to_publish_json)
+            
             # Publish message to CheckStock Queue
             channel.basic_publish(
                 exchange='',
                 routing_key='CheckStock',
-                body=data_to_publish
+                body=data_to_publish_json
             )
 
     channel.basic_consume(queue='New_Order', on_message_callback=callback, auto_ack=True)
@@ -65,3 +81,5 @@ def listen_for_requests():
 
 if __name__ == "__main__":
     listen_for_requests()
+
+

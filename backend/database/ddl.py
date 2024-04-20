@@ -44,11 +44,7 @@ def create_tables_if_not_exist(connection):
            Product_ID VARCHAR(5),
            Quantity INT,
            Status ENUM("In Progress", "Shipped", "Complete"),
-           PRIMARY KEY(Order_ID),
-           FOREIGN KEY(Customer_ID) REFERENCES Customer(Customer_ID)
-           ON DELETE CASCADE ON UPDATE CASCADE,
-           FOREIGN KEY(Product_ID) REFERENCES Product(Product_ID)
-           ON DELETE CASCADE ON UPDATE CASCADE
+           PRIMARY KEY(Order_ID)
         );
 
         -- CREATE TABLE Storage
@@ -57,9 +53,7 @@ def create_tables_if_not_exist(connection):
            Quantity INT,
            Threshold INT,
            Restock_Time INT,
-           PRIMARY KEY(Product_ID),
-           FOREIGN KEY(Product_ID)
-           REFERENCES Product(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE
+           PRIMARY KEY(Product_ID)
         );
 
         -- CREATE TABLE Admin
@@ -77,11 +71,7 @@ def create_tables_if_not_exist(connection):
            Status ENUM("In Progress","Shipped",
            "Complete", "Cancelled"),
            Quantity INT,
-           PRIMARY KEY (Product_ID, Date_Time),
-           FOREIGN KEY(Product_ID) REFERENCES Product(Product_ID)
-           ON DELETE CASCADE ON UPDATE CASCADE,
-           FOREIGN KEY(Order_ID) REFERENCES Orders(Order_ID)
-           ON DELETE CASCADE ON UPDATE CASCADE
+           PRIMARY KEY (Product_ID, Date_Time)
         );
     """
 

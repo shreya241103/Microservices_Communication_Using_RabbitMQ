@@ -4,10 +4,21 @@ def insert_order(connection, order):
     try:
         if connection.is_connected():
             # Insert Order to Database here
-            query = f"INSERT INTO Orders VALUES ('{order["order_id"]}')"
+            query = "INSERT INTO Orders (Order_ID, Customer_ID, Product_ID, Quantity) VALUES (%s, %s, %s, %s)"
             cursor = connection.cursor()
-            cursor.execute(query)
-            pass
 
+            # Extract values from the order dictionary
+            order_id = order.get("Order_ID", "")
+            customer_id = order.get("Customer_ID", "")
+            product_id = order.get("Product_ID", "")
+            quantity = order.get("Quantity", 0)  # Assuming default quantity is 0
+
+            # Execute the SQL query
+            cursor.execute(query, (order_id, customer_id, product_id, quantity))
+
+            # Commit the transaction
+            connection.commit()
+            print("Order inserted successfully")
+            
     except Exception as e:
         print("Error Inserting Order:", e)
