@@ -5,6 +5,7 @@ import json
 import time
 import threading
 import mysql.connector
+import crud
 
 port = 3406
 password = "password"
@@ -43,26 +44,48 @@ def listen_for_requests():
 
         # Message Format: {Order_ID: str, Product_ID: str, Quantity: int}
         # Process Message
-        Order_ID = message.get('Order_ID')
-        Product_ID = message.get('Product_ID')
-        Quantity = message.get('Quantity')
+        order = {}
+        order["Order_ID"] = message.get('Order_ID')
+        order["Product_ID"] = message.get('Product_ID')
+        order["Quantity"] = message.get('Quantity')
 
         connection = get_connection()
 
         if connection:
             # DO STUFF
             # Database Operations
-
+            result = crud.order_status(connection, order)
             # Publish Message to StockAvailable
             # Message Format: {Order_ID: str, Available: bool}
+            if result == "True":
+                print(f"Publishing message to StockAvailable Queue.")
+                data_to_publish = json.dumps({"Order_ID": order["Order_ID"], "Available": "yes"})
+                channel.basic_publish(
+                    exchange = '',
+                    routing_key = 'StockAvailable',
+                    body = data_to_publish
+                )
+            else:
+                print(f"Publishing message to StockAvailable Queue.")
+                data_to_publish = json.dumps({"Order_ID": order["Order_ID"], "Available": "no"})
+                channel.basic_publish(
+                    exchange = '',
+                    routing_key = 'StockAvailable',
+                    body = data_to_publish
+                )
+            
+                restock_time = crud.get_restock_time(connection, order["Product_ID"])
+                existing_quantity = crud.get_storage_quantity(connection, order["Product_ID"])
+                if restock_time is not None:
+                    request = {
+                    "Product_ID": order["Product_ID"],
+                    "Order_ID": order["Order_ID"],
+                    "Date_Time":(order["Quantity"] - existing_quantity) * restock_time,
+                    "Quantity": order["Quantity"] - existing_quantity
+                    }
+                    crud.insert_restock_request(connection, request)
 
-            print(f"Publishing message to StockAvailable Queue.")
-            data_to_publish = json.dumps({"Order_ID": "", "Available": ""})
-            channel.basic_publish(
-                exchange = '',
-                routing_key = 'StockAvailable',
-                body = data_to_publish
-            )
+
         print("--------------------------------------------------\n")
 
     channel.basic_consume(queue='CheckStock', on_message_callback=callback, auto_ack=True)

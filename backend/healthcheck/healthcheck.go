@@ -14,18 +14,25 @@ import (
 )
 
 const (
+<<<<<<< HEAD
 	databaseThreshold = 15 
 	order_processingThreshold = 15 
 	producerThreshold = 15
 	stock_managementThreshold = 15
+=======
+	databaseThreshold         = 30 // Threshold in seconds for Producer 1
+	order_processingThreshold = 30 // Threshold in seconds for Producer 2
+	producerThreshold         = 30
+	stock_managementThreshold = 30
+>>>>>>> ddb24d5803abd67ca80c0799785b15d33fcdcc46
 )
 
 var (
-	lastMessageTimedatabase time.Time
+	lastMessageTimedatabase         time.Time
 	lastMessageTimeorder_processing time.Time
-	lastMessageTimeproducer time.Time
+	lastMessageTimeproducer         time.Time
 	lastMessageTimestock_management time.Time
-	mutex                    sync.Mutex
+	mutex                           sync.Mutex
 )
 
 type Message struct {
@@ -69,7 +76,6 @@ func handleMessages(d amqp.Delivery) {
 		break
 	
 
-
 	}
 	fmt.Printf("Heartbeat Recieved : %s\n",message.MicroserviceName)
 }
@@ -80,9 +86,17 @@ func checkProducers() {
 
 		mutex.Lock()
 		currentTime := time.Now()
+<<<<<<< HEAD
 		
 		
 		
+=======
+
+		if currentTime.Sub(lastMessageTimedatabase) > databaseThreshold*time.Second {
+			fmt.Println("Database is not working")
+		}
+
+>>>>>>> ddb24d5803abd67ca80c0799785b15d33fcdcc46
 		if currentTime.Sub(lastMessageTimeorder_processing) > order_processingThreshold*time.Second {
 			fmt.Println("Order Processing is not working")
 		}
@@ -92,18 +106,20 @@ func checkProducers() {
 		if currentTime.Sub(lastMessageTimeproducer) > producerThreshold*time.Second {
 			fmt.Println("Producer is not working")
 		}
-		
+
 		if currentTime.Sub(lastMessageTimestock_management) > stock_managementThreshold*time.Second {
 			fmt.Println("Stock Management is not working")
 		}
 
-		
 		mutex.Unlock()
 	}
 }
 
 func main() {
-	fmt.Println("Go RabbitMQ Consumer")
+	fmt.Println("##################################################")
+	fmt.Println("         Healthcheck Microservice Running")
+	fmt.Println("##################################################")
+	fmt.Println()
 
 	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
@@ -139,8 +155,9 @@ func main() {
 	for d := range msgs {
 		handleMessages(d)
 	}
-
-	fmt.Println("Consumer started. To exit press CTRL+C")
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("		Consumer started. To exit press CTRL+C")
+	fmt.Println("--------------------------------------------------")
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
 	<-signalCh
