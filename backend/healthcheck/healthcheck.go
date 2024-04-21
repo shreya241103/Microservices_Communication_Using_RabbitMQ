@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	databaseThreshold = 15 // Threshold in seconds for Producer 1
-	order_processingThreshold = 15 // Threshold in seconds for Producer 2
+	databaseThreshold = 15 
+	order_processingThreshold = 15 
 	producerThreshold = 15
 	stock_managementThreshold = 15
 )
@@ -50,32 +50,44 @@ func handleMessages(d amqp.Delivery) {
 	defer mutex.Unlock()
 
 	switch message.MicroserviceName {
+	
+	case "database":
+		
+		lastMessageTimedatabase = time.Now()
+		break
+		
+		
 	case "Order_Processing":
 		lastMessageTimeorder_processing = time.Now()
-	case "database":
-		lastMessageTimedatabase = time.Now()
+		break
+	
 	case "producer":
 		lastMessageTimeproducer = time.Now()
+		break
 	case "stock-management":
 		lastMessageTimestock_management = time.Now()
+		break
+	
 
 
 	}
+	fmt.Printf("Heartbeat Recieved : %s\n",message.MicroserviceName)
 }
 
 func checkProducers() {
 	for {
-		time.Sleep(5 * time.Second) // Check every 30 seconds
+		time.Sleep(10 * time.Second) // Check every 30 seconds
 
 		mutex.Lock()
 		currentTime := time.Now()
 		
-		if currentTime.Sub(lastMessageTimedatabase) > databaseThreshold*time.Second {
-			fmt.Println("Database is not working")
-		}
+		
 		
 		if currentTime.Sub(lastMessageTimeorder_processing) > order_processingThreshold*time.Second {
 			fmt.Println("Order Processing is not working")
+		}
+		if currentTime.Sub(lastMessageTimedatabase) > databaseThreshold*time.Second {
+			fmt.Println("Database is not working")
 		}
 		if currentTime.Sub(lastMessageTimeproducer) > producerThreshold*time.Second {
 			fmt.Println("Producer is not working")
