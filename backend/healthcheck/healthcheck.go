@@ -14,17 +14,10 @@ import (
 )
 
 const (
-<<<<<<< HEAD
 	databaseThreshold = 15 
 	order_processingThreshold = 15 
 	producerThreshold = 15
 	stock_managementThreshold = 15
-=======
-	databaseThreshold         = 30 // Threshold in seconds for Producer 1
-	order_processingThreshold = 30 // Threshold in seconds for Producer 2
-	producerThreshold         = 30
-	stock_managementThreshold = 30
->>>>>>> ddb24d5803abd67ca80c0799785b15d33fcdcc46
 )
 
 var (
@@ -86,17 +79,9 @@ func checkProducers() {
 
 		mutex.Lock()
 		currentTime := time.Now()
-<<<<<<< HEAD
 		
 		
 		
-=======
-
-		if currentTime.Sub(lastMessageTimedatabase) > databaseThreshold*time.Second {
-			fmt.Println("Database is not working")
-		}
-
->>>>>>> ddb24d5803abd67ca80c0799785b15d33fcdcc46
 		if currentTime.Sub(lastMessageTimeorder_processing) > order_processingThreshold*time.Second {
 			fmt.Println("Order Processing is not working")
 		}
