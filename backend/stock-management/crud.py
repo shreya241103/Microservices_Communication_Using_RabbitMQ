@@ -139,6 +139,31 @@ def get_storage_quantity(connection, product_id):
         print("Error retrieving quantity from Storage table:", e)
         return None
 
+def insert_restock(connection, order, quantity, time, type):
+    try:
+        if connection.is_connected():
+            # Extract values from the order dictionary
+            order_id = order.get("Order_ID", "")
+            product_id = order.get("Product_ID", "")
+
+            # Define the SQL query to insert restock request
+            query = """
+                INSERT INTO Restock_Requests 
+                (Product_ID, Type, Order_ID, Date_Time, Status, Quantity) 
+                VALUES (%s, %s, %s, DATE_ADD(NOW(), INTERVAL %s SECOND), %s, %s)
+            """
+            cursor = connection.cursor()
+
+            # Execute the SQL query
+            cursor.execute(query, (product_id, type, order_id, time * quantity, "In Progress", quantity))
+
+            # Commit the transaction
+            connection.commit()
+            print("Restock inserted successfully")
+
+    except Exception as e:
+        print("Error Inserting Restock:", e)
+
 
 
 

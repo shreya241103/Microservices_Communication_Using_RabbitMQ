@@ -22,7 +22,7 @@ def database_init():
         if connection.is_connected():
             print("Connected to MySQL database")
             ddl.create_db_if_not_exists( connection, "Inventory_DB")
-
+            ddl.create_event(connection)
     except mysql.connector.Error as error:
         print("Failed to connect to MySQL Server:", error)
 

@@ -5,6 +5,8 @@ def create_db_if_not_exists( connection, database):
     try:
         if connection.is_connected():
             cursor = connection.cursor()
+            drop_db = f"DROP DATABASE {database};"
+            cursor.execute(drop_db)
             create_db_query = f"CREATE DATABASE IF NOT EXISTS {database};"
             cursor.execute(create_db_query)
             cursor.close()
@@ -157,7 +159,7 @@ def init_customers(connection):
 def init_storage( connection ):
     insert_query = """INSERT INTO Storage
                         VALUES
-                        ('P0001', 10, 5, 10),
+                        ('P0001', 10, 5, 1),
                         ('P0002', 10, 5, 10),
                         ('P0003', 10, 5, 10),
                         ('P0004', 10, 5, 10),
@@ -180,3 +182,61 @@ def init_storage( connection ):
             cursor.close()
     except Exception as e:
         print("Error Inserting into Storage:", e)
+
+def create_event(connection):
+    try:
+        if connection.is_connected():
+            cursor = connection.cursor()
+            create_event_query = """
+                CREATE EVENT IF NOT EXISTS check_restock_requests
+                ON SCHEDULE EVERY 1 SECOND
+                DO
+                BEGIN
+                    DECLARE restock_type ENUM('Storage', 'Order');
+                    DECLARE restock_quantity INT;
+
+                    -- Cursor variables
+                    DECLARE done INT DEFAULT FALSE;
+                    DECLARE cur CURSOR FOR
+                        SELECT Type, Quantity
+                        FROM Restock_Requests
+                        WHERE Date_Time <= NOW()
+                        AND Status != 'Complete';
+                    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+                    -- Open the cursor
+                    OPEN cur;
+
+                    -- Loop through the cursor results
+                    read_loop: LOOP
+                        FETCH cur INTO restock_type, restock_quantity;
+                        IF done THEN
+                            LEAVE read_loop;
+                        END IF;
+
+                        -- Check the restock type and perform actions accordingly
+                        IF restock_type = 'Storage' THEN
+                            -- Add quantity to the storage table
+                            UPDATE Storage
+                            SET Quantity = Quantity + restock_quantity
+                            WHERE Product_ID IN (SELECT Product_ID FROM Restock_Requests WHERE Date_Time <= NOW());
+                        ELSE 
+                            UPDATE Orders
+                            SET Status = 'Complete'
+                            WHERE Order_ID IN (SELECT Order_ID FROM Restock_Requests WHERE Date_Time <= NOW());
+                        END IF;
+                        -- For 'Order' type, change status to 'Complete' in the Restock_Requests table
+                        UPDATE Restock_Requests
+                        SET Status = 'Complete'
+                        WHERE Date_Time <= NOW();
+                    END LOOP;
+
+                    -- Close the cursor
+                    CLOSE cur;
+                END ;
+            """
+            cursor.execute(create_event_query)
+            cursor.close()
+            print("Event created successfully.")
+    except Exception as e:
+        print("Error creating event:", e)
