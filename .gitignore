@@ -3,3 +3,4 @@ node_modules
 client.js
 *__pycache__
 backend/consumer.DS_Store
+.DS_Store
