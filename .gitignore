@@ -2,4 +2,4 @@ test
 node_modules
 client.js
 *__pycache__
-backend/consumer
+backend/consumer.DS_Store
